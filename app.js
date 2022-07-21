@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const axios = require('axios');
 const mongoose = require('mongoose');
 const ejs = require("ejs");
+const encrypt = require('mongoose-encryption');
+
 
 const app = express();
 
@@ -20,10 +22,14 @@ mongoose.connect("mongodb://localhost:27017/Auth");
 
 
 //creating MongoDB scehema
-const loginSchema = {
+const loginSchema = new mongoose.Schema({
     username : String,
     password : String
-}
+})
+
+const secretPharse = "thisisoursecretphaseoombu";
+loginSchema.plugin(encrypt,{secret:secretPharse,encryptedFields:["password"]});
+
 
 const User = new mongoose.model("UserData",loginSchema);
 
