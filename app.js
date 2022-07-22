@@ -5,7 +5,9 @@ const bodyParser = require("body-parser");
 const axios = require('axios');
 const mongoose = require('mongoose');
 const ejs = require("ejs");
-const md5 = require("md5");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
 
 
 const app = express();
@@ -48,21 +50,26 @@ app.route("/register")
         res.render("register");
     })
     .post((req,res) => {
+
         const email = (req.body.username);
-        const password = md5(req.body.password);
+        const password = (req.body.password);
 
-        const newUser = new User({
-            username: email,
-            password: (password)
-        })
+        bcrypt.hash(password, saltRounds, function(err, hash) {
+            const newUser = new User({
+                username: email,
+                password: hash
+            })
+    
+            newUser.save((err)=>{
+                if(!err){
+                    res.redirect("/");
+                }else{
+                    res.write(err);
+                }
+            }) 
+        });
 
-        newUser.save((err)=>{
-            if(!err){
-                res.redirect("/");
-            }else{
-                res.write(err);
-            }
-        })
+       
 
     })
 
@@ -74,15 +81,19 @@ app.route("/login")
     })
     .post((req,res) => {
         const email = (req.body.username);
-        const password = md5(req.body.password);
+        const password = (req.body.password);
 
+        
         User.findOne({username:email},(err,user) => {
             if(user){
-                if(user.username === email && user.password === password){
-                    res.render("secrets",{username : user.username});
-                }else{
-                    console.log("username & password does not match");
-                }
+                bcrypt.compare(password, user.password, function(err, result) {
+                    if(user.username === email && result === true){
+                        res.render("secrets",{username : user.username});
+                    }else{
+                        console.log("username & password does not match");
+                    }
+                   
+                });
                
             }else{
                 console.log("user not found");
